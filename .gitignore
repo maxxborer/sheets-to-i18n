@@ -1,3 +1,7 @@
+node_modules/
+dist/
+.env
+.DS_Store
 # Logs
 logs
 *.log
@@ -40,6 +44,10 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+
+# Cache directories
+.cache/
+node_modules/.cache/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
@@ -133,7 +141,6 @@ dist
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
