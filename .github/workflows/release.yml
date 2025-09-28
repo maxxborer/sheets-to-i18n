@@ -206,6 +206,17 @@ jobs:
       - name: Собрать проект
         run: npm run build
 
+      - name: Проверить аутентификацию NPM
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "❌ NPM_TOKEN не установлен в GitHub Secrets!"
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          npm whoami
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Опубликовать в npm
         run: |
           if [[ "${{ needs.prepare-release.outputs.is_dev }}" == "true" ]]; then
@@ -216,7 +227,7 @@ jobs:
             npm publish --tag ${{ needs.prepare-release.outputs.npm_tag }}
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Создать GitHub релиз
         uses: actions/create-release@v1
