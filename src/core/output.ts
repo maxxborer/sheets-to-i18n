@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { FormatOption, TranslationsByLocale, TranslationTree } from '../types';
 import { FORMAT_OPTIONS } from '../constants';
+import type { FormatOption, TranslationsByLocale, TranslationTree } from '../types';
 
 function ensureDir(path: string): void {
   const dir = dirname(path);
@@ -32,7 +32,7 @@ export function writeTranslations(
   baseDir: string,
   format: FormatOption,
   data: TranslationsByLocale,
-  customFileName?: string
+  customFileName?: string,
 ): void {
   const baseName = customFileName || 'translation';
 

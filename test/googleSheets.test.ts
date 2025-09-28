@@ -3,7 +3,7 @@ import { fetchSheetValues, getAccessToken } from '../src/core/googleSheets';
 
 vi.mock('google-auth-library', () => ({
   JWT: class {
-    constructor(_: unknown) { }
+    constructor(_: unknown) {}
     async getAccessToken() {
       return null as unknown as string; // заставим getAccessToken бросить в нашей обертке
     }

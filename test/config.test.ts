@@ -45,10 +45,13 @@ describe('config', () => {
   it('loadConfig объединяет env и файл + учитывает S2I_CONFIG', async () => {
     const custom = join(tmp, 'custom.json');
 
-    writeFileSync(custom, JSON.stringify({
-      source: { spreadsheetId: 'env-id' },
-      output: { directory: 'dir', format: 'js' }
-    }));
+    writeFileSync(
+      custom,
+      JSON.stringify({
+        source: { spreadsheetId: 'env-id' },
+        output: { directory: 'dir', format: 'js' },
+      }),
+    );
 
     vi.stubEnv('S2I_CONFIG', custom);
     vi.resetModules();

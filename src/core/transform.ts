@@ -1,5 +1,5 @@
-import { assignNestedValue } from '../utils/nested';
 import type { TranslationsByLocale } from '../types';
+import { assignNestedValue } from '../utils/nested';
 
 function initializeLocales(locales: string[]): TranslationsByLocale {
   const translations: TranslationsByLocale = {};

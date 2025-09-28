@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
+import { DEFAULT_FILE_NAME, DEFAULT_OUTPUT_DIRECTORY, FORMAT_OPTIONS } from '../constants';
 import { ENV } from '../env';
 import { SheetsToI18nConfig } from '../types';
-import { DEFAULT_OUTPUT_DIRECTORY, DEFAULT_FILE_NAME, FORMAT_OPTIONS } from '../constants';
 
 export function loadConfigFromEnv(): SheetsToI18nConfig {
   return {

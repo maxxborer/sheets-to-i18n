@@ -1,10 +1,10 @@
 import { parseArgs } from './core/argv';
 import { loadConfig } from './core/config';
 import { fetchSheetValues, getAccessToken } from './core/googleSheets';
-import { error, info } from './utils/logger';
 import { writeTranslations } from './core/output';
 import { matrixToTranslations } from './core/transform';
 import { ENV } from './env';
+import { error, info } from './utils/logger';
 
 export async function runUpdate(argv: string[] = process.argv): Promise<void> {
   const args = parseArgs(argv);

@@ -1,7 +1,7 @@
 import { JWT } from 'google-auth-library';
 import { DEFAULT_GOOGLE_JWT_SCOPES } from '../constants';
-import { getSheetsApiUrl } from '../utils/getSheetsApiUrl';
 import { formatApiToken } from '../utils/formatApiToken';
+import { getSheetsApiUrl } from '../utils/getSheetsApiUrl';
 
 export interface GoogleAuthConfig {
   clientEmail: string;

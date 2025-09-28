@@ -25,11 +25,17 @@ describe('writeTranslations', () => {
   });
 
   it('поддерживает кастомное имя файла', () => {
-    writeTranslations(dir, 'json', {
-      en: { a: { b: 'x' } },
-    }, 'messages');
+    writeTranslations(
+      dir,
+      'json',
+      {
+        en: { a: { b: 'x' } },
+      },
+      'messages',
+    );
 
     const en = readFileSync(join(dir, 'en', 'messages.json'), 'utf8');
+
     expect(JSON.parse(en)).toEqual({ a: { b: 'x' } });
     rmSync(dir, { recursive: true, force: true });
   });
