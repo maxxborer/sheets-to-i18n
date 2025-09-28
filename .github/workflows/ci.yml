@@ -8,6 +8,7 @@ on:
       - "v*.*.*_*.*.*"
   pull_request:
     branches: [main]
+  workflow_call:
 
 jobs:
   verify:
