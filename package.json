@@ -1,5 +1,5 @@
 {
-  "name": "@maxxborer/sheets-to-i18n",
+  "name": "sheets-to-i18n",
   "version": "0.0.0",
   "description": "🌐 Generates translations from your Google Sheets 📑",
   "keywords": [

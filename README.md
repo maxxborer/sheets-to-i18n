@@ -1,6 +1,6 @@
 # sheets-to-i18n
 
-[![npm version](https://img.shields.io/npm/v/@maxxborer/sheets-to-i18n?color=blue)](https://www.npmjs.com/package/@maxxborer/sheets-to-i18n)
+[![npm version](https://img.shields.io/npm/v/sheets-to-i18n?color=blue)](https://www.npmjs.com/package/sheets-to-i18n)
 [![CI](https://github.com/maxxborer/sheets-to-i18n/actions/workflows/ci.yml/badge.svg)](https://github.com/maxxborer/sheets-to-i18n/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -200,7 +200,7 @@ Dev релизы используют формат тега `v0.0.0_1.2.3`, гд
 **Установка dev версии:**
 
 ```bash
-npm install @maxxborer/sheets-to-i18n@dev
+npm install sheets-to-i18n@dev
 ```
 
 **Примеры создания через GitHub UI:**
