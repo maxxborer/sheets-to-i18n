@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    tags:
+      - "v*.*.*"
+      - "v*.*.*_*.*.*"
   pull_request:
     branches: [main]
 

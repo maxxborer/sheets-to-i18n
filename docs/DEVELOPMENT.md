@@ -60,17 +60,32 @@ Legacy ENV (`GOOGLE_SHEETS_*` без `LOCALES_`) поддерживаются с
   - `fix: ...` — исправление багов
   - `docs: ...` — документация
   - `chore: ...`, `refactor: ...`, `test: ...` и т.д.
-- Релизы — `semantic-release` (см. `.releaserc.json`):
-  - Анализ коммитов, генерация релиз-нотов, обновление `CHANGELOG.md`
-  - Публикация на GitHub и в npm
-- Триггер релиза: push в ветку `main` (см. `.github/workflows/release.yml`).
-- Локальная проверка релиза (без публикации): `npx semantic-release --dry-run`
+- Создание релизов **только через GitHub Actions**:
+  - **Обычные релизы (v*.*.*)**:
+    - Actions → "Create Tag" → выбор типа версии или кастомной версии
+    - Автоматически обновляют package.json и создают коммит в main
+  - **Dev релизы (v*.*.*_*.*.*)**:
+    - Actions → "Create Tag" → включить "Create dev release"
+    - Не изменяют main ветку, публикуются с тегом "dev" в npm
+- Процесс релиза:
+  1. Создание тега запускает CI на этом теге
+  2. При успешном CI → автоматическая публикация в npm
+  3. При неуспешном CI → автоматическое удаление тега
+- Локальная сборка и проверка: `npm run build && npm pack` (без публикации)
 
 ## CI/CD
 
-- CI (`.github/workflows/ci.yml`): Node из `.nvmrc`, кеш npm, `npm run verify`, покрытие.
-- Release (`.github/workflows/release.yml`): `semantic-release` с `GITHUB_TOKEN` и `NPM_TOKEN`.
-- Dependabot (`.github/dependabot.yml`) для обновления зависимостей.
+- **CI** (`.github/workflows/ci.yml`): запускается на push в main, PR в main и тегах v*.*.* и v*.*.*_*.*.*
+  - Node из `.nvmrc`, кеш npm, `npm run verify`, покрытие тестов
+- **Create Tag** (`.github/workflows/create-tag.yml`): ручное создание тегов через GitHub UI
+  - Выбор типа версии (patch/minor/major) или кастомной версии
+  - Автоматическое обновление package.json и создание GitHub Release
+- **Release** (`.github/workflows/release.yml`): публикация после успешного CI
+  - Запускается для тегов v*.*.* и v*.*.*_*.*.* после успешного прохождения CI
+  - Автоматическая сборка и публикация в npm с `NPM_TOKEN`
+  - Dev релизы (формат v*.*.*_*.*.*) публикуются с тегом "dev", обычные — с "latest"
+  - При неуспешном CI автоматически удаляет созданный тег
+- **Dependabot** (`.github/dependabot.yml`) для обновления зависимостей
 
 ## Code Review и приём MR
 

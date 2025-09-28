@@ -3,13 +3,12 @@ name: Release
 on:
   workflow_run:
     workflows: ["CI"]
-    branches: [main]
     types: [completed]
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_branch, 'v') }}
     permissions:
       contents: write
       issues: write
@@ -25,7 +24,49 @@ jobs:
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
       - run: npm ci
-      - run: npx semantic-release
+      - run: npm run build
+
+      - name: Determine if dev release
+        id: dev_check
+        run: |
+          TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+          if [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+_[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_dev=true" >> $GITHUB_OUTPUT
+            echo "npm_tag=dev" >> $GITHUB_OUTPUT
+          else
+            echo "is_dev=false" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npm
+        run: |
+          if [[ "${{ steps.dev_check.outputs.is_dev }}" == "true" ]]; then
+            echo "🚀 Публикация dev релиза с тегом '${{ steps.dev_check.outputs.npm_tag }}'"
+            npm publish --tag ${{ steps.dev_check.outputs.npm_tag }}
+          else
+            echo "🚀 Публикация обычного релиза с тегом '${{ steps.dev_check.outputs.npm_tag }}'"
+            npm publish --tag ${{ steps.dev_check.outputs.npm_tag }}
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  cleanup-failed-tag:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_branch, 'v') }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete failed tag
+        run: |
+          TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+          echo "🗑️ Удаляем тег $TAG_NAME из-за неуспешного CI..."
+
+          # Удаляем тег из удаленного репозитория
+          git push origin :refs/tags/$TAG_NAME || echo "⚠️ Тег уже был удален или не существует"
+          echo "✅ Попытка удаления тега $TAG_NAME завершена"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
