@@ -12,20 +12,6 @@ on:
           - patch
           - minor
           - major
-      custom_version:
-        description: "Кастомная версия (опционально, переопределяет version_type). Формат: v1.2.3"
-        required: false
-        type: string
-      is_dev_release:
-        description: "Создать dev релиз (формат: v0.0.0_1.2.3)"
-        required: false
-        default: false
-        type: boolean
-      base_version:
-        description: "Базовая версия для dev релиза (например, v1.0.0). Используется только если is_dev_release = true"
-        required: false
-        default: "v0.0.0"
-        type: string
 
 jobs:
   prepare-release:
@@ -35,8 +21,6 @@ jobs:
     outputs:
       version: ${{ steps.new_version.outputs.version }}
       tag: ${{ steps.new_version.outputs.tag }}
-      is_dev: ${{ steps.new_version.outputs.is_dev }}
-      npm_tag: ${{ steps.new_version.outputs.npm_tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,97 +46,36 @@ jobs:
       - name: Вычислить новую версию
         id: new_version
         run: |
-          if [ "${{ inputs.is_dev_release }}" = "true" ]; then
-            # Логика dev релиза
-            BASE_VERSION="${{ inputs.base_version }}"
-            BASE_VERSION=${BASE_VERSION#v}  # Убираем префикс 'v' если есть
+          CURRENT="${{ steps.current_version.outputs.current }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
 
-            if [ "${{ inputs.custom_version }}" != "" ]; then
-              # Используем кастомную dev версию
-              DEV_VERSION="${{ inputs.custom_version }}"
-              DEV_VERSION=${DEV_VERSION#v}
-            else
-              # Вычисляем dev версию
-              CURRENT="${{ steps.current_version.outputs.current }}"
-              IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "${{ inputs.version_type }}" in
+            "major")
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            "minor")
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            "patch")
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
 
-              case "${{ inputs.version_type }}" in
-                "major")
-                  MAJOR=$((MAJOR + 1))
-                  MINOR=0
-                  PATCH=0
-                  ;;
-                "minor")
-                  MINOR=$((MINOR + 1))
-                  PATCH=0
-                  ;;
-                "patch")
-                  PATCH=$((PATCH + 1))
-                  ;;
-              esac
-              DEV_VERSION="$MAJOR.$MINOR.$PATCH"
-            fi
-
-            echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
-            echo "tag=v${BASE_VERSION}_${DEV_VERSION}" >> $GITHUB_OUTPUT
-            echo "is_dev=true" >> $GITHUB_OUTPUT
-            echo "npm_tag=dev" >> $GITHUB_OUTPUT
-          else
-            # Логика обычного релиза
-            if [ "${{ inputs.custom_version }}" != "" ]; then
-              # Используем кастомную версию
-              NEW_VERSION="${{ inputs.custom_version }}"
-              NEW_VERSION=${NEW_VERSION#v}
-              echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-              echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
-            else
-              # Вычисляем обновление версии
-              CURRENT="${{ steps.current_version.outputs.current }}"
-              IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-
-              case "${{ inputs.version_type }}" in
-                "major")
-                  MAJOR=$((MAJOR + 1))
-                  MINOR=0
-                  PATCH=0
-                  ;;
-                "minor")
-                  MINOR=$((MINOR + 1))
-                  PATCH=0
-                  ;;
-                "patch")
-                  PATCH=$((PATCH + 1))
-                  ;;
-              esac
-
-              NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-              echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-              echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
-            fi
-            echo "is_dev=false" >> $GITHUB_OUTPUT
-            echo "npm_tag=latest" >> $GITHUB_OUTPUT
-          fi
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Обновить версию в package.json
         run: |
-          if [ "${{ steps.new_version.outputs.is_dev }}" = "false" ]; then
-            npm version ${{ steps.new_version.outputs.version }} --no-git-tag-version
-          else
-            echo "📋 Пропускаем обновление package.json для dev релиза"
-          fi
-
-      - name: Зафиксировать изменение версии
-        run: |
-          if [ "${{ steps.new_version.outputs.is_dev }}" = "false" ]; then
-            git add package.json
-            git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
-            git push origin main
-          else
-            echo "📋 Пропускаем коммит для dev релиза"
-          fi
+          npm version ${{ steps.new_version.outputs.version }} --no-git-tag-version
 
       - name: Создать и отправить тег
         run: |
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
           git tag ${{ steps.new_version.outputs.tag }}
           git push origin ${{ steps.new_version.outputs.tag }}
 
@@ -222,13 +145,13 @@ jobs:
 
       - name: Опубликовать в npm
         run: |
-          if [[ "${{ needs.prepare-release.outputs.is_dev }}" == "true" ]]; then
-            echo "🚀 Публикация dev релиза с тегом '${{ needs.prepare-release.outputs.npm_tag }}'"
-            npm publish --tag ${{ needs.prepare-release.outputs.npm_tag }}
-          else
-            echo "🚀 Публикация обычного релиза с тегом '${{ needs.prepare-release.outputs.npm_tag }}'"
-            npm publish --tag ${{ needs.prepare-release.outputs.npm_tag }}
-          fi
+          echo "🔍 Проверяем информацию о публикации..."
+          npm whoami || echo "⚠️ npm whoami не удался, но продолжаем..."
+          echo "📋 Содержимое package.json (имя и версия):"
+          node -e "const pkg = require('./package.json'); console.log('Name:', pkg.name); console.log('Version:', pkg.version);"
+
+          echo "🚀 Публикация в npm..."
+          npm publish --access public --tag latest
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -240,17 +163,44 @@ jobs:
           tag_name: ${{ needs.prepare-release.outputs.tag }}
           release_name: Release ${{ needs.prepare-release.outputs.tag }}
           draft: false
-          prerelease: ${{ needs.prepare-release.outputs.is_dev == 'true' }}
+          prerelease: false
           body: |
-            Release ${{ needs.prepare-release.outputs.tag }}
-
-            ${{ needs.prepare-release.outputs.is_dev == 'true' && '🚧 **Dev Release** - Это экспериментальная версия для тестирования' || '🚀 **Stable Release**' }}
+            🚀 **Release ${{ needs.prepare-release.outputs.tag }}**
 
             ## Изменения
-            ${{ needs.prepare-release.outputs.is_dev == 'true' && format('- Dev версия: {0}', needs.prepare-release.outputs.version) || format('- Обновление версии до {0}', needs.prepare-release.outputs.version) }}
+            - Обновление версии до ${{ needs.prepare-release.outputs.version }}
 
             ✅ **Статус**: Релиз успешно опубликован!
-            📦 **NPM**: Опубликовано с тегом `${{ needs.prepare-release.outputs.npm_tag }}`
+            📦 **NPM**: Опубликовано с тегом `latest`
+
+  update-main:
+    needs: [prepare-release, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare-release.outputs.tag }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Настроить Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Пушить обновление версии в main
+        run: |
+          # Переключаемся на main и мерджим изменения из тега
+          git checkout main
+          git merge --no-ff ${{ needs.prepare-release.outputs.tag }} -m "chore: release ${{ needs.prepare-release.outputs.tag }}"
+          git push origin main
 
   cleanup-on-failure:
     needs: [prepare-release, verify]
@@ -274,12 +224,7 @@ jobs:
           echo "❌ CI проверки провалились, удаляем тег ${{ needs.prepare-release.outputs.tag }}"
           git push --delete origin ${{ needs.prepare-release.outputs.tag }} || echo "Тег уже удален"
 
-      - name: Откатить коммит версии (если был)
+      - name: Очистка при неудаче
         run: |
-          if [ "${{ needs.prepare-release.outputs.is_dev }}" = "false" ]; then
-            echo "↩️ Откатываем коммит с версией для обычного релиза"
-            git reset --hard HEAD~1
-            git push --force-with-lease origin main
-          else
-            echo "📋 Нечего откатывать для dev релиза"
-          fi
+          echo "🧹 Неудачный релиз - тег ${{ needs.prepare-release.outputs.tag }} уже удален"
+          echo "📋 Main ветка не изменялась, откат не требуется"
