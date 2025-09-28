@@ -1,6 +1,6 @@
 {
   "name": "sheets-to-i18n",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "🌐 Generates translations from your Google Sheets 📑",
   "keywords": [
     "i18n",
